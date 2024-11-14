@@ -6,8 +6,12 @@ const PORT = process.env.PORT || 3000;
 
 // 中间件
 app.use(express.json());
-app.use(cors()); // 允许所有域名访问
-// 或者设置特定的域名： app.use(cors({ origin: 'http://localhost:8080' }));
+// 详细配置 CORS
+app.use(cors({
+    origin: '*',  // 允许所有来源
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type']
+}));
 
 let region = [
     {
@@ -33,12 +37,37 @@ let region = [
     }
 ]
 
+let markers = [];
+
 // 路由
 app.get('/', (req, res) => {
     res.send('Hello World!');
 });
 app.get('/regions', (req, res) => {
     res.json(region);
+});
+app.get('/markers', (req, res) => {
+    res.json(markers);
+});
+
+//添加保存标注点
+app.post('/markers', (req, res) => {
+    try {
+        const newMarkers = req.body;
+        markers = newMarkers;
+        console.log('标注点保存成功', markers);
+        res.json({
+            success: true,
+            message: '标注点保存成功',
+            count: markers.length
+        });
+    } catch (error) {
+        console.error('保存标注点时出错:', error);
+        res.status(500).json({
+            success: false,
+            message: '服务器内部错误',
+        });
+    }
 });
 
 
