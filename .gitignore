@@ -4,6 +4,7 @@ front/package-lock.json
 server/node_modules
 server/package-lock.json
 /dist
+misc/python_scripts/venv
 
 
 # local env files

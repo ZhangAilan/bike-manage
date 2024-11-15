@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors'); // 引入 cors 模块
 const app = express();
 const pool = require('./config/db'); // 引入数据库连接
+const geojsonRouter = require('./routes/geojson');  // 引入geojson路由
 const PORT = process.env.PORT || 3000;
 
 // 中间件
@@ -40,6 +41,7 @@ let region = [
 let markers = [];
 
 // 路由
+app.use('/geojson', geojsonRouter);  //先注册具体的路由
 app.get('/', (req, res) => {
     res.send('Hello World!');
 });

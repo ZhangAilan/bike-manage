@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <AppNavbar @changeMap="updateMap" @showObj="showObj" @togglePopup="handlePopupToggle" />
+    <AppNavbar @changeMap="updateMap" @showObj="showObj" @togglePopup="handlePopupToggle" @loadGeoJson="handleLoadGeoJson" />
     <!-- Map Container -->
     <div id="map" style="height: 100vh;"></div>
     <!-- 弹窗组件 -->
@@ -36,14 +36,11 @@ export default {
 
   mounted() {
     this.initMap();
-    this.loadGeoJson('geojson/region.json');
     this.initPopupOverlay();
-    //初始化标注图层
     markerUtil.map = this.map;  // 将地图实例传递给markerUtil
     markerUtil.initMarkerLayer();  // 初始化标注图层
     this.loadMarkersFromServer();
-    //初始化几何绘制图层
-    geometryUtil.initVectorLayer(this.map);
+    geometryUtil.initVectorLayer(this.map);  //初始化几何绘制图层
   },
 
   methods: {
@@ -97,57 +94,6 @@ export default {
       this.map = null;
       console.log('Map and all layers have been removed.');
     },
-
-    // 加载 GeoJSON 数据并叠加在底图上
-    loadGeoJson(filePath) {
-      console.log('开始加载 GeoJSON 数据:', filePath);
-      if (this.geojsonLayer) {
-        this.map.removeLayer(this.geojsonLayer);
-      }
-
-      fetch(filePath)
-        .then((response) => response.json())
-        .then((data) => {
-          console.log('GeoJSON 数据加载成功:', data);
-          this.geojsonLayer = new ol.layer.Vector({
-            source: new ol.source.Vector({
-              features: new ol.format.GeoJSON().readFeatures(data, {
-                featureProjection: 'EPSG:3857',
-              }),
-            }),
-            style: (feature) => {
-              return new ol.style.Style({
-                // 填充样式
-                fill: new ol.style.Fill({
-                  color: 'rgba(0, 150, 136, 0.5)', // 填充色
-                }),
-                // 边界样式
-                stroke: new ol.style.Stroke({
-                  color: '#009688', // 边界颜色
-                  width: 3, // 边界宽度
-                }),
-                // 文字标签样式
-                text: feature.get('name') ? new ol.style.Text({
-                  font: '14px Calibri,sans-serif', // 字体样式
-                  fill: new ol.style.Fill({
-                    color: '#000', // 字体颜色
-                  }),
-                  offsetX: 0, // 水平偏移
-                  offsetY: 20, // 垂直偏移
-                  textBaseline: 'middle', // 文字基线
-                  textAlign: 'center', // 文字对齐方式
-                  text: feature.get('name'), // 仅显示有 'name' 属性的要素
-                }) : null,
-              });
-            },
-          });
-
-          this.map.addLayer(this.geojsonLayer);
-          console.log('GeoJSON 图层已添加到地图');
-        })
-        .catch((error) => console.error('加载 GeoJSON 数据失败:', error));
-    },
-
     //展示三维模型
     showObj() {
       console.log('Show OBJ file...');
@@ -180,17 +126,14 @@ export default {
         autoPanAnimation: {
           duration: 250,
         },
-      });
-      
+      });     
       this.map.addOverlay(this.overlay);
       console.log('Popup Overlay 已添加到地图');
-
       this.map.on('click', (evt) => {
         if (!this.popupEnabled) {
           console.log('信息框功能已禁用');
           return;
         }
-
         console.log('地图点击事件触发');
         const feature = this.map.forEachFeatureAtPixel(evt.pixel, 
           (feature) => {
@@ -205,7 +148,7 @@ export default {
             }
           }
         );
-
+        
         if (feature) {
           console.log('点击了 GeoJSON 要素');
           const coordinate = evt.coordinate;
@@ -214,6 +157,7 @@ export default {
           this.$nextTick(() => {
             if (this.$refs.popup) {
               console.log('设置 Popup 位置:', coordinate);
+              this.$refs.popup.updateFeature(feature);
               this.overlay.setElement(this.$refs.popup.$el);
               this.overlay.setPosition(coordinate);
             } else {
@@ -239,6 +183,57 @@ export default {
         // 如果禁用，关闭当前显示的 popup
         this.closePopup();
       }
+    },
+    // 加载GeoJSON数据的方法
+    // 该方法接收一个geojsonData参数,包含要在地图上显示的GeoJSON格式的数据
+    handleLoadGeoJson(geojsonData) {
+      console.log('开始加载 GeoJSON 数据');
+      // 如果已存在GeoJSON图层,先将其移除
+      if (this.geojsonLayer) {
+        this.map.removeLayer(this.geojsonLayer);
+      }
+
+      // 创建新的矢量图层
+      this.geojsonLayer = new ol.layer.Vector({
+        // 创建矢量数据源
+        source: new ol.source.Vector({
+          // 将GeoJSON数据转换为OpenLayers的Feature对象
+          // 并指定投影为Web墨卡托(EPSG:3857)
+          features: new ol.format.GeoJSON().readFeatures(geojsonData, {
+            featureProjection: 'EPSG:3857',
+          }),
+        }),
+        // 定义要素的样式
+        style: (feature) => {
+          return new ol.style.Style({
+            // 填充样式 - 半透明的绿色
+            fill: new ol.style.Fill({
+              color: 'rgba(0, 150, 136, 0.5)',
+            }),
+            // 边框样式 - 实线绿色,宽度3像素
+            stroke: new ol.style.Stroke({
+              color: '#009688',
+              width: 3,
+            }),
+            // 如果要素有name属性,则添加文本标注
+            text: feature.get('name') ? new ol.style.Text({
+              font: '14px Calibri,sans-serif', // 字体设置
+              fill: new ol.style.Fill({
+                color: '#000',  // 黑色文字
+              }),
+              offsetX: 0,      // 文本X轴偏移
+              offsetY: 20,     // 文本Y轴偏移20像素
+              textBaseline: 'middle', // 文本基线居中对齐
+              textAlign: 'center',    // 文本水平居中
+              text: feature.get('name'), // 显示要素的name属性值
+            }) : null,
+          });
+        },
+      });
+
+      // 将新创建的图层添加到地图中
+      this.map.addLayer(this.geojsonLayer);
+      console.log('GeoJSON 图层已添加到地图');
     },
   }
 }

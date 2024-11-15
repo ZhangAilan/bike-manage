@@ -2,6 +2,7 @@
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
       <a class="navbar-brand d-flex align-items-center" href="#">
+        <img src="@/assets/logo.png" alt="Logo" class="navbar-logo" @click="switchMap" />
         <span class="ms-2" @click="switchMap">城市共享单车投放管理系统</span>
       </a>
       <div class="collapse navbar-collapse" id="navbarNav">
@@ -69,6 +70,9 @@
           </li>
           <li class="nav-item">
             <a class="nav-link text-center" href="#">单车热点分析</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-center" href="#" @click="loadGeoJsonFromDB">加载区域</a>
           </li>
           <li class="nav-item">
             <a class="nav-link text-center" href="#" @click="showObj">三维模型</a>
@@ -304,6 +308,23 @@ export default {
       // 通知父组件 popup 状态变化
       this.$emit('togglePopup', this.popupEnabled);
     },
+
+    async loadGeoJsonFromDB() {
+      try {
+        const response = await fetch('http://localhost:3000/geojson');
+        if (!response.ok) {
+          throw new Error('获取GeoJSON数据失败');
+        }
+        const data = await response.json();
+
+        // 通过事件将数据传递给父组件
+        this.$emit('loadGeoJson', data);
+        console.log('成功从数据库加载GeoJSON数据');
+      } catch (error) {
+        console.error('加载GeoJSON数据失败:', error);
+        alert('加载区域数据失败，请稍后重试');
+      }
+    },
   },
 };
 </script>
@@ -497,5 +518,42 @@ button:hover {
 
 .nav-link.btn-link.active {
   color: #28a745;
+}
+
+/* 当点击下拉菜单时保持显示状态 */
+.dropdown:focus-within .dropdown-menu {
+  display: block !important;
+}
+
+/* 修改 logo 相关样式 */
+.navbar-logo {
+  height: 32px;
+  width: 32px;
+  /* 设置固定宽度，确保是正圆形 */
+  object-fit: cover;
+  /* 改为 cover 以确保图片填充整个圆形区域 */
+  border-radius: 50%;
+  /* 使图片变为圆形 */
+  border: 2px solid #fff;
+  /* 添加白色边框 */
+  padding: 2px;
+  /* 内边距，使边框和图片之间有一些空间 */
+  background-color: #fff;
+  /* 背景色为白色 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  /* 添加轻微阴影效果 */
+}
+
+/* 优化标题样式 */
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  /* 稍微增加 logo 和文字之间的间距 */
+}
+
+.navbar-brand span {
+  font-size: 1.2rem;
+  font-weight: 500;
 }
 </style>
