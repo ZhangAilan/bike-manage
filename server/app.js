@@ -4,6 +4,7 @@ const app = express();
 const pool = require('./config/db'); // 引入数据库连接
 const geojsonRouter = require('./routes/geojson');  // 引入geojson路由
 const regionsRouter = require('./routes/regions');
+const bikeRouter = require('./routes/bike');
 const PORT = process.env.PORT || 3000;
 
 // 中间件
@@ -20,6 +21,7 @@ let markers = [];
 // 路由
 app.use('/regions', regionsRouter);
 app.use('/geojson', geojsonRouter);  //先注册具体的路由
+app.use('/bikes', bikeRouter);
 app.get('/', (req, res) => {
     res.send('Hello World!');
 });

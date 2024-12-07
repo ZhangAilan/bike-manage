@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <AppNavbar @changeMap="updateMap" @showObj="showObj" @togglePopup="handlePopupToggle" @loadGeoJson="handleLoadGeoJson" />
+    <AppNavbar @changeMap="updateMap" @showObj="showObj" @togglePopup="handlePopupToggle" @loadGeoJson="handleLoadGeoJson" @loadBikeLocations="handleLoadBikeLocations" @loadHeatmap="handleHeatmap" />
     <!-- Map Container -->
     <div id="map" style="height: 100vh;"></div>
     <!-- 弹窗组件 -->
@@ -32,7 +32,15 @@ export default {
       showPopup: false,
       popupEnabled: false,
       isGeoJsonLoaded: false,
+      bikeLayer: null,
+      heatmapLayer: null,
     };
+  },
+
+  provide() {
+    return {
+      handleHeatmap: this.handleHeatmap
+    }
   },
 
   mounted() {
@@ -242,6 +250,88 @@ export default {
       this.isGeoJsonLoaded = true;  // 设置状态为已加载
       console.log('GeoJSON 图层已添加到地图');
     },
+    
+    // 处理单车位置数据的方法
+    handleLoadBikeLocations(bikeData) {
+      console.log('处理单车位置数据');      
+      // 如果已存在单车图层，先移除
+      if (this.bikeLayer) {
+        this.map.removeLayer(this.bikeLayer);
+      }
+      // 创建单车位置的矢量图层
+      this.bikeLayer = new ol.layer.Vector({
+        source: new ol.source.Vector({
+          features: new ol.format.GeoJSON().readFeatures(bikeData, {
+            featureProjection: 'EPSG:3857'
+          })
+        }),
+        style: new ol.style.Style({
+          image: new ol.style.Circle({
+            radius: 6,
+            fill: new ol.style.Fill({
+              color: '#3388ff'  // 蓝色填充
+            }),
+            stroke: new ol.style.Stroke({
+              color: '#ffffff',  // 白色边框
+              width: 2
+            })
+          })
+        })
+      });
+      // 添加图层到地图
+      this.map.addLayer(this.bikeLayer);
+      // 获取所有单车位置的范围
+      const extent = this.bikeLayer.getSource().getExtent();
+      // 调整地图视图以显示所有单车
+      this.map.getView().fit(extent, {
+        padding: [50, 50, 50, 50],  // 设置边距
+        duration: 1000  // 动画持续时间（毫秒）
+      });
+      console.log('单车位置图层已添加到地图');
+    },
+
+
+    // 添加处理热力图的方法
+    handleHeatmap(heatmapLayer) {
+      if (!heatmapLayer) {
+        console.error('热力图层无效');
+        return;
+      }
+
+      console.log('接收到热力图层');
+      
+      // 如果已存在热力图层，先移除
+      if (this.heatmapLayer) {
+        this.map.removeLayer(this.heatmapLayer);
+      }
+      
+      // 保存新的热力图层引用并添加到地图
+      this.heatmapLayer = heatmapLayer;
+      this.map.addLayer(heatmapLayer);
+      
+      // 检查数据源中的要素
+      const features = heatmapLayer.getSource().getFeatures();
+      console.log('热力图层数据点数:', features.length);
+
+      if (features.length > 0) {
+        // 计算所有特征的范围
+        const extent = heatmapLayer.getSource().getExtent();
+        
+        // 检查范围是否有效
+        if (extent && extent.every(coord => !isNaN(coord) && isFinite(coord))) {
+          // 调整视图以显示热力图
+          this.map.getView().fit(extent, {
+            padding: [50, 50, 50, 50],
+            duration: 1000,
+            maxZoom: 15  // 限制最大缩放级别
+          });
+        } else {
+          console.error('无效的图层范围:', extent);
+        }
+      } else {
+        console.error('热力图层没有有效的数据点');
+      }
+    }
   }
 }
 </script>

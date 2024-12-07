@@ -17,3 +17,7 @@ webgis课内代码，Vue+Express实现
 ![alt text](misc/query.png)
 ### 增设投放区域
 ![alt text](misc/add.png)
+### 单车定位查询
+![alt text](misc/bikes.png)
+### 热力图生成
+![alt text](misc/heat.png)

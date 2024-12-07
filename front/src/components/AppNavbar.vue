@@ -66,10 +66,10 @@
             <a class="nav-link text-center" href="#" @click="showDialog('增设投放区域')">增设投放区域</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link text-center" href="#">单车定位查询</a>
+            <a class="nav-link text-center" href="#" @click="loadBikeLocations">单车定位查询</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link text-center" href="#">单车热点分析</a>
+            <a class="nav-link text-center" href="#" @click="showDialog('单车热点分析')">单车热点分析</a>
           </li>
           <li class="nav-item">
             <a class="nav-link text-center" href="#" @click="loadGeoJsonFromServer('http://localhost:3000/geojson')">加载区域</a>
@@ -100,6 +100,7 @@
 <script>
 import AreaQueryDialog from './AreaQueryDialog.vue';
 import AddAreaDialog from './AddAreaDialog.vue';
+import HeatMapDialog from './HeatMapDialog.vue';
 import markerUtil from '../utils/marker';
 import geometry from '../utils/geometry';
 
@@ -173,10 +174,8 @@ export default {
           return AreaQueryDialog;
         case '增设投放区域':
           return AddAreaDialog;
-        // case '单车定位':
-        //   return BikeLocationDialog;
-        // case '热点分析':
-        //   return HotspotAnalysisDialog;
+        case '单车热点分析':
+          return HeatMapDialog;
         default:
           return null;
       }
@@ -327,6 +326,19 @@ export default {
         
       } catch (error) {
         console.error('加载 GeoJSON 数据失败:', error);
+      }
+    },
+
+    async loadBikeLocations() {
+      try {
+        const response = await fetch('http://localhost:3000/bikes');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const bikeData = await response.json();
+        this.$emit('loadBikeLocations', bikeData);
+      } catch (error) {
+        console.error('加载单车位置数据失败:', error);
       }
     },
   },
