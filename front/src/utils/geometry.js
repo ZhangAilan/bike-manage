@@ -193,7 +193,9 @@ export default {
 
             // 添加最终要素
             const feature = new ol.Feature({
-                geometry: geometry
+                geometry: geometry,
+                drawTime: Date.now(),
+                isDrawn: true
             });
             this.vectorSource.addFeature(feature);
             this.features.push(feature); // 保存已完成的要素
@@ -275,3 +277,5 @@ export default {
         }
     }
 }
+
+

@@ -3,12 +3,17 @@
 webgis课内代码，Vue+Express实现
 
 ## 实现功能
-- [x] openlayers显示底图
-- [x] 点击logo切换底图
-- [x] 文件对话框+three.js加载三维立方体，键盘控制移动
-- [x] 展示geojson数据
-- [x] 地图前后端交互:保存/加载点位
-- [x] 几何图形绘制：线、面+结束绘制+清空绘制
-- [x] popup信息展示，从后端获取对应信息
-
-![alt text](misc/1.png)
+### openlayers显示底图，点击logo切换底图
+![alt text](misc/change.png)
+### three.js加载三维立方体，键盘控制移动
+![alt text](misc/cube.png)
+### 地图前后端交互:保存/加载点位
+![alt text](misc/label.png)
+### 几何图形绘制：线、面+结束绘制+清空绘制
+![alt text](misc/draw.png)
+### popup信息展示，从后端获取对应信息
+![alt text](misc/popup.png)
+### 查询投放区域
+![alt text](misc/query.png)
+### 增设投放区域
+![alt text](misc/add.png)

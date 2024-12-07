@@ -31,6 +31,7 @@ export default {
       overlay: null,
       showPopup: false,
       popupEnabled: false,
+      isGeoJsonLoaded: false,
     };
   },
 
@@ -187,10 +188,15 @@ export default {
     // 加载GeoJSON数据的方法
     // 该方法接收一个geojsonData参数,包含要在地图上显示的GeoJSON格式的数据
     handleLoadGeoJson(geojsonData) {
-      console.log('开始加载 GeoJSON 数据');
-      // 如果已存在GeoJSON图层,先将其移除
-      if (this.geojsonLayer) {
+      console.log('处理 GeoJSON 数据');
+      
+      // 如果GeoJSON已加载，则移除图层
+      if (this.isGeoJsonLoaded && this.geojsonLayer) {
+        console.log('移除现有的 GeoJSON 图层');
         this.map.removeLayer(this.geojsonLayer);
+        this.geojsonLayer = null;
+        this.isGeoJsonLoaded = false;
+        return;
       }
 
       // 创建新的矢量图层
@@ -233,6 +239,7 @@ export default {
 
       // 将新创建的图层添加到地图中
       this.map.addLayer(this.geojsonLayer);
+      this.isGeoJsonLoaded = true;  // 设置状态为已加载
       console.log('GeoJSON 图层已添加到地图');
     },
   }

@@ -60,10 +60,10 @@
             </ul>
           </li>
           <li class="nav-item">
-            <a class="nav-link text-center" href="#" @click="showDialog('查询投放区域')">查询投放区域</a>
+            <a class="nav-link text-center" href="#" @click="async () => { await loadGeoJsonFromServer('http://localhost:3000/regions'); showDialog('查询投放区域'); }">查询投放区域</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link text-center" href="#">增设投放区域</a>
+            <a class="nav-link text-center" href="#" @click="showDialog('增设投放区域')">增设投放区域</a>
           </li>
           <li class="nav-item">
             <a class="nav-link text-center" href="#">单车定位查询</a>
@@ -72,7 +72,7 @@
             <a class="nav-link text-center" href="#">单车热点分析</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link text-center" href="#" @click="loadGeoJsonFromDB">加载区域</a>
+            <a class="nav-link text-center" href="#" @click="loadGeoJsonFromServer('http://localhost:3000/geojson')">加载区域</a>
           </li>
           <li class="nav-item">
             <a class="nav-link text-center" href="#" @click="showObj">三维模型</a>
@@ -99,6 +99,7 @@
 
 <script>
 import AreaQueryDialog from './AreaQueryDialog.vue';
+import AddAreaDialog from './AddAreaDialog.vue';
 import markerUtil from '../utils/marker';
 import geometry from '../utils/geometry';
 
@@ -170,8 +171,8 @@ export default {
       switch (type) {
         case '查询投放区域':
           return AreaQueryDialog;
-        // case '增设区域':
-        //   return AddAreaDialog;
+        case '增设投放区域':
+          return AddAreaDialog;
         // case '单车定位':
         //   return BikeLocationDialog;
         // case '热点分析':
@@ -309,20 +310,23 @@ export default {
       this.$emit('togglePopup', this.popupEnabled);
     },
 
-    async loadGeoJsonFromDB() {
+    async loadGeoJsonFromServer(url) {
       try {
-        const response = await fetch('http://localhost:3000/geojson');
+        console.log('开始从服务器加载 GeoJSON 数据');
+        const response = await fetch(url);
+        
         if (!response.ok) {
-          throw new Error('获取GeoJSON数据失败');
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data = await response.json();
-
-        // 通过事件将数据传递给父组件
-        this.$emit('loadGeoJson', data);
-        console.log('成功从数据库加载GeoJSON数据');
+        
+        const geojsonData = await response.json();
+        console.log('成功获取 GeoJSON 数据:', geojsonData);
+        
+        // 通过事件发送数据给父组件
+        this.$emit('loadGeoJson', geojsonData);
+        
       } catch (error) {
-        console.error('加载GeoJSON数据失败:', error);
-        alert('加载区域数据失败，请稍后重试');
+        console.error('加载 GeoJSON 数据失败:', error);
       }
     },
   },
@@ -389,7 +393,7 @@ button {
   border: none;
   /* 去掉边框 */
   padding: 8px 12px;
-  /* 内边距 */
+  /* 内距 */
   border-radius: 4px;
   /* 圆角 */
   cursor: pointer;
@@ -537,7 +541,7 @@ button:hover {
   border: 2px solid #fff;
   /* 添加白色边框 */
   padding: 2px;
-  /* 内边距，使边框和图片之间有一些空间 */
+  /* 内边距，使边框图片之间有一些空间 */
   background-color: #fff;
   /* 背景色为白色 */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
