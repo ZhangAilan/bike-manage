@@ -98,6 +98,7 @@
 </template>
 
 <script>
+/* global ol */
 import AreaQueryDialog from './AreaQueryDialog.vue';
 import AddAreaDialog from './AddAreaDialog.vue';
 import HeatMapDialog from './HeatMapDialog.vue';
@@ -119,10 +120,10 @@ export default {
       dialogComponent: null,  //动态加载对话框组件
 
       mapUrls: [
-        'http://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}',
         'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         'http://{a-c}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
         'http://{a-c}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+        'http://localhost:8989/geoserver/wms',
       ],
       mapLayers: [],  //存储底图层
       currentMapIndex: 0,//当前底图索引
@@ -224,7 +225,28 @@ export default {
     switchMap() {
       this.currentMapIndex = (this.currentMapIndex + 1) % this.mapUrls.length;
       const currentUrl = this.mapUrls[this.currentMapIndex];
-      this.$emit('changeMap', currentUrl);
+      
+      if (currentUrl.includes('geoserver')) {
+        // 如果是GeoServer图层,需要创建WMS图层
+        const wmsSource = new ol.source.TileWMS({
+          url: currentUrl,
+          params: {
+            'LAYERS': 'webgis:nanjing_railway', // 替换为您的工作空间和图层名
+            'TILED': true,
+            'FORMAT': 'image/png',
+          },
+          serverType: 'geoserver'
+        });
+        
+        // 发送WMS图层配置给父组件
+        this.$emit('changeMap', {
+          type: 'wms',
+          source: wmsSource
+        });
+      } else {
+        // 普通XYZ图层
+        this.$emit('changeMap', currentUrl);
+      }
     },
 
     //显示三维模型

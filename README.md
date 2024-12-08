@@ -21,3 +21,5 @@ webgis课内代码，Vue+Express实现
 ![alt text](misc/bikes.png)
 ### 热力图生成
 ![alt text](misc/heat.png)
+### geoserver发布底图
+![alt text](misc/geoserver.png)

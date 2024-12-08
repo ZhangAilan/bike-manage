@@ -75,23 +75,56 @@ export default {
       });
       console.log('Map initialized:', this.map); // 确认地图是否初始化成功
     },
-    updateMap(url) {
+    updateMap(source) {
       if (!this.map) {
         this.initMap();
         return;
       }
+      
+      // 移除现有的底图图层
       this.map.getLayers().forEach((layer) => {
         if (layer instanceof ol.layer.Tile) {
           this.map.removeLayer(layer);
         }
       });
-      const newTileLayer = new ol.layer.Tile({
-        source: new ol.source.XYZ({
-          url: url,
-          maxzoom: 30,
-        }),
+
+      // 创建新图层
+      let newLayer;
+      if (typeof source === 'string') {
+        // XYZ图层
+        newLayer = new ol.layer.Tile({
+          source: new ol.source.XYZ({
+            url: source,
+            maxZoom: 30,
+          }),
+          zIndex: 0  // 设置最低层级
+        });
+      } else if (source.type === 'wms') {
+        // WMS图层
+        newLayer = new ol.layer.Tile({
+          source: source.source,
+          zIndex: 0  // 设置最低层级
+        });
+      }
+
+      // 保存当前所有非底图图层
+      const otherLayers = [];
+      this.map.getLayers().forEach(layer => {
+        if (!(layer instanceof ol.layer.Tile)) {
+          otherLayers.push(layer);
+        }
       });
-      this.map.addLayer(newTileLayer);
+
+      // 清除所有图层
+      this.map.getLayers().clear();
+      
+      // 先添加底图
+      this.map.addLayer(newLayer);
+      
+      // 再添加其他图层
+      otherLayers.forEach(layer => {
+        this.map.addLayer(layer);
+      });
     },
     clearMap() {
       if (!this.map) {
