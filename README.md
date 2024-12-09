@@ -23,3 +23,5 @@ webgis课内代码，Vue+Express实现
 ![alt text](misc/heat.png)
 ### geoserver发布底图
 ![alt text](misc/geoserver.png)
+### 最短路径
+![alt text](misc/path.png)

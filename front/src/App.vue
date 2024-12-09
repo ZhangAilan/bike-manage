@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <AppNavbar @changeMap="updateMap" @showObj="showObj" @togglePopup="handlePopupToggle" @loadGeoJson="handleLoadGeoJson" @loadBikeLocations="handleLoadBikeLocations" @loadHeatmap="handleHeatmap" />
+    <AppNavbar @changeMap="updateMap" @showObj="showObj" @togglePopup="handlePopupToggle" @loadGeoJson="handleLoadGeoJson" @loadBikeLocations="handleLoadBikeLocations" @loadHeatmap="handleHeatmap" @drawPath="handleDrawPath" />
     <!-- Map Container -->
     <div id="map" style="height: 100vh;"></div>
     <!-- 弹窗组件 -->
@@ -34,6 +34,7 @@ export default {
       isGeoJsonLoaded: false,
       bikeLayer: null,
       heatmapLayer: null,
+      pathLayer: null,
     };
   },
 
@@ -364,6 +365,42 @@ export default {
       } else {
         console.error('热力图层没有有效的数据点');
       }
+    },
+
+    // 绘制路径的方法
+    handleDrawPath(pathCoordinates) {
+      // 如果已存在路径图层，先移除
+      if (this.pathLayer) {
+        this.map.removeLayer(this.pathLayer);
+      }
+
+      // 创建路径要素
+      const pathFeature = new ol.Feature({
+        geometry: new ol.geom.LineString(pathCoordinates)
+      });
+
+      // 创建路径图层
+      this.pathLayer = new ol.layer.Vector({
+        source: new ol.source.Vector({
+          features: [pathFeature]
+        }),
+        style: new ol.style.Style({
+          stroke: new ol.style.Stroke({
+            color: '#FF0000',
+            width: 4
+          })
+        }),
+        zIndex: 2 // 确保路径显示在底图之上
+      });
+
+      // 添加路径图层到地图
+      this.map.addLayer(this.pathLayer);
+
+      // 调整视图以显示整个路径
+      this.map.getView().fit(pathFeature.getGeometry().getExtent(), {
+        padding: [50, 50, 50, 50],
+        duration: 1000
+      });
     }
   }
 }

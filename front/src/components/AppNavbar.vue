@@ -14,6 +14,7 @@
             <button class="marker-button" @click="togglePopupMode" :class="{ 'active': popupEnabled }">
               {{ popupEnabled ? 'PopHide' : 'PopUp' }}
             </button>
+            <button class="marker-button" @click="calculateShortestPath">最短路径</button>
           </li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
@@ -104,6 +105,7 @@ import AddAreaDialog from './AddAreaDialog.vue';
 import HeatMapDialog from './HeatMapDialog.vue';
 import markerUtil from '../utils/marker';
 import geometry from '../utils/geometry';
+import routeCalculator from '../utils/routeCalculator';
 
 export default {
   name: 'AppNavbar',
@@ -134,6 +136,7 @@ export default {
       selectedDrawType: null,
       isDrawing: false,
       popupEnabled: false, // 添加 popup 控制状态
+      pathPoints: [], // 存储用于计算路径的两个点
     };
   },
 
@@ -271,8 +274,15 @@ export default {
     handleMapClick(event) {
       if (!this.markerMode) return;
       const coordinate = event.coordinate;
-      const text = this.markerText;
+      const text = this.markerText || `点 ${this.pathPoints.length + 1}`;
       markerUtil.addMarker(coordinate, text);
+      
+      // 存储最新的两个点用于路径计算
+      this.pathPoints.push(coordinate);
+      if (this.pathPoints.length > 2) {
+        this.pathPoints.shift(); // 只保留最新的两个点
+      }
+      
       console.log(`添加标注: 坐标(${coordinate[0]}, ${coordinate[1]}), 文本: "${text}"`);
     },
     //保存标注点到服务器
@@ -307,7 +317,7 @@ export default {
       this.isDrawing = !this.isDrawing;
 
       if (this.isDrawing) {
-        // 开始新的绘制
+        // 开始绘制
         console.log(`开始绘制${this.selectedDrawType === 'LineString' ? '线段' : '多边形'}`);
         geometry.startDrawing(this.$parent.map, this.selectedDrawType);
       } else {
@@ -361,6 +371,65 @@ export default {
         this.$emit('loadBikeLocations', bikeData);
       } catch (error) {
         console.error('加载单车位置数据失败:', error);
+      }
+    },
+
+    // 修改计算最短路径的方法
+    async calculateShortestPath() {
+      try {
+        if (this.pathPoints.length !== 2) {
+          alert('请先标注起点和终点（最新的两个标注点将作为起终点）');
+          return;
+        }
+
+        console.log('开始计算最短路径...');
+        console.log('起点:', this.pathPoints[0]);
+        console.log('终点:', this.pathPoints[1]);
+
+        // 切换到 GeoServer 底图
+        const geoserverUrl = this.mapUrls[3]; // GeoServer URL
+        this.$emit('changeMap', {
+          type: 'wms',
+          source: new ol.source.TileWMS({
+            url: geoserverUrl,
+            params: {
+              'LAYERS': 'webgis:nanjing_railway',
+              'TILED': true,
+              'FORMAT': 'image/png',
+            },
+            serverType: 'geoserver'
+          })
+        });
+
+        // 等待一下确保底图切换完成
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // 创建路径计算实例并初始化
+        const pathFinder = new routeCalculator();
+        console.log('正在构建路网...');
+        try {
+          await pathFinder.buildNetwork();
+          console.log('路网构建完成');
+        } catch (error) {
+          console.error('路网构建失败:', error);
+          throw error;
+        }
+
+        // 计算最短路径
+        console.log('开始计算路径...');
+        const path = await pathFinder.findShortestPath(this.pathPoints[0], this.pathPoints[1]);
+        
+        if (path) {
+          console.log('路径计算成功:', path);
+          // 发送路径数据给父组件进行绘制
+          this.$emit('drawPath', path);
+        } else {
+          console.error('未找到有效路径');
+          alert('无法找到有效路径');
+        }
+      } catch (error) {
+        console.error('路径计算过程出错:', error);
+        alert('路径计算失败: ' + error.message);
       }
     },
   },
@@ -444,10 +513,10 @@ button:hover {
 /* 美化输入框 */
 .marker-input {
   border: 1px solid #ccc;
+  width: 120px;
   border-radius: 4px;
   padding: 8px;
   font-size: 14px;
-  width: 200px;
   margin-right: 10px;
 }
 

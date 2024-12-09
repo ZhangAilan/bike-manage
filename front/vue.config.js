@@ -5,9 +5,15 @@ module.exports = defineConfig({
   transpileDependencies: true,
   devServer: {
     proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
+      '/geoserver': {
+        target: 'http://localhost:8989',
         changeOrigin: true,
+        pathRewrite: {
+          '^/geoserver': '/geoserver'
+        },
+        headers: {
+          'Access-Control-Allow-Origin': '*'
+        }
       }
     }
   }
